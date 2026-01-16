@@ -9,27 +9,31 @@ if not TOKEN:
 
 bot = telebot.TeleBot(TOKEN)
 
-# /start
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.reply_to(
         message,
         "🧮 Bot tính toán\n"
-        "Gõ phép tính ví dụ:\n"
-        "2+3\n10-5\n4*6\n20/4"
+        "Ví dụ:\n"
+        "1+2+3\n"
+        "10.5-2.3\n"
+        "5*2*3\n"
+        "10/2/2"
     )
 
-# Tính toán
-@bot.message_handler(func=lambda m: m.text and re.match(r'^\s*\d+(\.\d+)?\s*[\+\-\*/]\s*\d+(\.\d+)?\s*$', m.text))
-def calculate(message):
+@bot.message_handler(func=lambda m: True)
+def calc(message):
+    text = message.text.replace(" ", "")
+
+    # chỉ cho phép số + - * / .
+    if not re.fullmatch(r"[0-9+\-*/.]+", text):
+        return
+
     try:
-        expression = message.text.replace(" ", "")
-        result = eval(expression)
+        result = eval(text)
         bot.reply_to(message, f"= {result}")
-    except ZeroDivisionError:
-        bot.reply_to(message, "❌ Không chia cho 0")
     except:
-        bot.reply_to(message, "❌ Lỗi phép tính")
+        bot.reply_to(message, "❌ Biểu thức không hợp lệ")
 
 print("✅ Bot is running...")
 bot.infinity_polling()
