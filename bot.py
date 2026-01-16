@@ -37,3 +37,16 @@ def calc(message):
 
 print("✅ Bot is running...")
 bot.infinity_polling()
+from deep_translator import GoogleTranslator
+
+# kiểm tra có phải tiếng Nhật không
+def is_japanese(text):
+    return bool(re.search(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]', text))
+
+@bot.message_handler(func=lambda m: m.text and is_japanese(m.text))
+def translate_jp_to_vi(message):
+    try:
+        translated = GoogleTranslator(source='ja', target='vi').translate(message.text)
+        bot.reply_to(message, f"🇯🇵→🇻🇳 {translated}")
+    except:
+        bot.reply_to(message, "❌ Không dịch được")
