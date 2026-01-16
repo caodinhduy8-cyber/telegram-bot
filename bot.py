@@ -36,7 +36,6 @@ def calc(message):
         bot.reply_to(message, "❌ Biểu thức không hợp lệ")
 
 print("✅ Bot is running...")
-bot.infinity_polling()
 from deep_translator import GoogleTranslator
 
 # kiểm tra có phải tiếng Nhật không
@@ -50,3 +49,4 @@ def translate_jp_to_vi(message):
         bot.reply_to(message, f"🇯🇵→🇻🇳 {translated}")
     except:
         bot.reply_to(message, "❌ Không dịch được")
+bot.infinity_polling()
