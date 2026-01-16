@@ -1,6 +1,7 @@
 import telebot
 import os
 import re
+from deep_translator import GoogleTranslator
 
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
@@ -9,44 +10,47 @@ if not TOKEN:
 
 bot = telebot.TeleBot(TOKEN)
 
+# ===== START =====
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.reply_to(
         message,
-        "🧮 Bot tính toán\n"
-        "Ví dụ:\n"
+        "🤖 Bot tính toán & dịch Nhật → Việt\n\n"
+        "📌 Ví dụ:\n"
         "1+2+3\n"
-        "10.5-2.3\n"
-        "5*2*3\n"
-        "10/2/2"
+        "10.5*2\n"
+        "100/4\n\n"
+        "🇯🇵 Gửi tiếng Nhật → bot tự dịch"
     )
 
+# ===== KIỂM TRA BIỂU THỨC TOÁN =====
+math_pattern = re.compile(r'^[0-9\.\+\-\*\/\(\)\s]+$')
+
+def safe_eval(expr):
+    return eval(expr, {"__builtins__": None}, {})
+
+# ===== XỬ LÝ TIN NHẮN =====
 @bot.message_handler(func=lambda m: True)
-def calc(message):
-    text = message.text.replace(" ", "")
+def handle_message(message):
+    text = message.text.strip()
 
-    # chỉ cho phép số + - * / .
-    if not re.fullmatch(r"[0-9+\-*/.]+", text):
-        return
+    # 1️⃣ TOÁN
+    if math_pattern.match(text):
+        try:
+            result = safe_eval(text)
+            bot.reply_to(message, f"= {result}")
+            return
+        except:
+            pass
 
+    # 2️⃣ DỊCH NHẬT → VIỆT
     try:
-        result = eval(text)
-        bot.reply_to(message, f"= {result}")
+        translated = GoogleTranslator(source='ja', target='vi').translate(text)
+        if translated and translated.lower() != text.lower():
+            bot.reply_to(message, f"🇯🇵➡️🇻🇳 {translated}")
     except:
-        bot.reply_to(message, "❌ Biểu thức không hợp lệ")
+        pass
+
 
 print("✅ Bot is running...")
-from deep_translator import GoogleTranslator
-
-# kiểm tra có phải tiếng Nhật không
-def is_japanese(text):
-    return bool(re.search(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]', text))
-
-@bot.message_handler(func=lambda m: m.text and is_japanese(m.text))
-def translate_jp_to_vi(message):
-    try:
-        translated = GoogleTranslator(source='ja', target='vi').translate(message.text)
-        bot.reply_to(message, f"🇯🇵→🇻🇳 {translated}")
-    except:
-        bot.reply_to(message, "❌ Không dịch được")
 bot.infinity_polling()
