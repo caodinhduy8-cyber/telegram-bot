@@ -19,14 +19,15 @@ def start(message):
         message,
         "🤖 Bot tính toán & dịch Nhật → Việt\n\n"
         "📌 Ví dụ:\n"
-        "@tenbot 1+2*3\n"
-        "@tenbot 1.2+1.3+199.7\n"
-        "@tenbot 明日ピックルボールをします"
+        "1+2*3\n"
+        "1,2+1.3+199,7\n"
+        "明日ピックルボールをします"
     )
 
 # ===== HÀM TÍNH TOÁN =====
 def calc_expression(expr):
     try:
+        # chỉ cho phép số và toán tử
         if not re.fullmatch(r"[0-9+\-*/().\s]+", expr):
             return None
 
@@ -50,12 +51,8 @@ def handle_all(message):
 
     text = message.text.strip()
 
-    # 🔒 CHỈ TRẢ LỜI KHI BỊ TAG TRONG GROUP
-    if message.chat.type in ["group", "supergroup"]:
-        bot_username = bot.get_me().username
-        if f"@{bot_username}" not in text:
-            return
-        text = text.replace(f"@{bot_username}", "").strip()
+    # ✅ coi , và . là như nhau
+    text = text.replace(",", ".")
 
     # 1️⃣ DỊCH TIẾNG NHẬT
     if re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", text):
