@@ -12,22 +12,28 @@ if not TOKEN:
 bot = telebot.TeleBot(TOKEN)
 translator = GoogleTranslator(source="ja", target="vi")
 
+# lấy username bot
+BOT_USERNAME = bot.get_me().username.lower()
+
 # ===== START =====
 @bot.message_handler(commands=["start"])
 def start(message):
     bot.reply_to(
         message,
         "🤖 Bot tính toán & dịch Nhật → Việt\n\n"
-        "📌 Ví dụ:\n"
-        "1+2*3\n"
-        "1,2+1.3+199,7\n"
-        "明日ピックルボールをします"
+        "📌 Dùng trong group cần TAG bot:\n"
+        f"@{BOT_USERNAME} 1,2+1,5\n"
+        f"@{BOT_USERNAME} 99,9+50+36,8\n"
+        f"@{BOT_USERNAME} 明日ピックルボールをします"
     )
 
 # ===== HÀM TÍNH TOÁN =====
 def calc_expression(expr):
     try:
-        # chỉ cho phép số và toán tử
+        # đổi dấu , thành .
+        expr = expr.replace(",", ".")
+
+        # chỉ cho phép số & toán tử
         if not re.fullmatch(r"[0-9+\-*/().\s]+", expr):
             return None
 
@@ -35,7 +41,7 @@ def calc_expression(expr):
 
         # làm gọn số
         if isinstance(result, float):
-            result = round(result, 6)
+            result = round(result, 10)
             if result.is_integer():
                 result = int(result)
 
@@ -49,12 +55,25 @@ def handle_all(message):
     if not message.text:
         return
 
-    text = message.text.strip()
+    text = message.text
 
-    # ✅ coi , và . là như nhau
-    text = text.replace(",", ".")
+    # ===== CHỈ TRẢ LỜI KHI BỊ TAG =====
+    mentioned = False
+    if message.entities:
+        for e in message.entities:
+            if e.type == "mention":
+                mention_text = text[e.offset:e.offset + e.length].lower()
+                if mention_text == f"@{BOT_USERNAME}":
+                    mentioned = True
+                    break
 
-    # 1️⃣ DỊCH TIẾNG NHẬT
+    if not mentioned:
+        return  # ❌ không tag → im lặng
+
+    # bỏ tag ra khỏi nội dung
+    text = re.sub(f"@{BOT_USERNAME}", "", text, flags=re.IGNORECASE).strip()
+
+    # ===== DỊCH TIẾNG NHẬT =====
     if re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", text):
         try:
             vi = translator.translate(text)
@@ -63,7 +82,7 @@ def handle_all(message):
         except:
             pass
 
-    # 2️⃣ TÍNH TOÁN
+    # ===== TÍNH TOÁN =====
     result = calc_expression(text)
     if result is not None:
         bot.reply_to(message, f"= {result}")
